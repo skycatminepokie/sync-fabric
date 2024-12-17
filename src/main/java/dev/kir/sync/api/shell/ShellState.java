@@ -1,5 +1,9 @@
 package dev.kir.sync.api.shell;
 
+import com.mojang.datafixers.util.Pair;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.PairCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.kir.sync.entity.ShellEntity;
 import dev.kir.sync.item.SimpleInventory;
 import dev.kir.sync.util.WorldUtil;
@@ -21,6 +25,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.DyeColor;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.Uuids;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
@@ -39,6 +44,9 @@ public class ShellState {
     public static final float PROGRESS_DONE = 1F;
     public static final float PROGRESS_PRINTING = 0.75F;
     public static final float PROGRESS_PAINTING = PROGRESS_DONE - PROGRESS_PRINTING;
+    public static final Codec<ShellState> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+
+    ));
 
     private static final NbtSerializerFactory<ShellState> NBT_SERIALIZER_FACTORY;
 
@@ -362,5 +370,37 @@ public class ShellState {
             .add(Identifier.class, "world", x -> x.world, (x, world) -> x.world = world)
             .add(BlockPos.class, "pos", x -> x.pos, (x, pos) -> x.pos = pos)
             .build();
+    }
+
+    public record Position(Identifier world, BlockPos pos) {
+        public static final Codec<Position> CODEC = Codec.pair(Identifier.CODEC, BlockPos.CODEC).xmap((pair) -> new Position(pair.getFirst(), pair.getSecond()), (position) -> new Pair<>(position.world(), position.pos()));
+    }
+
+    public record Experience(Integer level, Float progress, Integer total) {
+        public static final Codec<Experience> CODEC = RecordCodecBuilder.create((instance) -> instance.group(
+                Codec.INT.fieldOf("level").forGetter(Experience::level),
+                Codec.FLOAT.fieldOf("progress").forGetter(Experience::progress),
+                Codec.INT.fieldOf("total").forGetter(Experience::total)
+        ).apply(instance, Experience::new));
+    }
+
+    public record OwnerInfo(UUID uuid, String name, Float health, Integer gameMode, SimpleInventory inventory) {
+        public static final Codec<OwnerInfo> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                Uuids.CODEC.fieldOf("ownerUuid").forGetter(OwnerInfo::uuid),
+                Codec.STRING.fieldOf("name").forGetter(OwnerInfo::name),
+                Codec.FLOAT.fieldOf("health").forGetter(OwnerInfo::health),
+                Codec.INT.fieldOf("gameMode").forGetter(OwnerInfo::gameMode),
+                SimpleInventory.CODEC.fieldOf("inventory").forGetter(OwnerInfo::inventory)
+        ).apply(instance, OwnerInfo::new));
+    }
+
+    public record ShellInfo(UUID uuid, Integer color, Float progress, Boolean isArtificial, ShellStateComponent shellStateComponent) {
+        public static final Codec<ShellInfo> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                Uuids.CODEC.fieldOf("uuid").forGetter(ShellInfo::uuid),
+                Codec.INT.fieldOf("color").forGetter(ShellInfo::color),
+                Codec.FLOAT.fieldOf("float").forGetter(ShellInfo::progress),
+                Codec.BOOL.fieldOf("isArtificial").forGetter(ShellInfo::isArtificial),
+                ShellStateComponent.CODEC.fieldOf("shellStateComponent").forGetter(ShellInfo::shellStateComponent)
+        ).apply(instance, ShellInfo::new));
     }
 }

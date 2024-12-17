@@ -1,18 +1,42 @@
 package dev.kir.sync.api.shell;
 
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.Lifecycle;
+import com.mojang.serialization.MapCodec;
+import dev.kir.sync.Sync;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.registry.Registry;
+import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryWrapper;
+import net.minecraft.registry.SimpleRegistry;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Represents attachable shell data.
  */
 public abstract class ShellStateComponent {
+
+    public record Type<T extends ShellStateComponent>(MapCodec<T> codec) {
+        public static final Identifier REGISTRY_ID = Sync.locate("shell_state_component_type");
+        public static final RegistryKey<Registry<ShellStateComponent.Type<?>>> REGISTRY_KEY = RegistryKey.ofRegistry(REGISTRY_ID);
+        public static final Registry<ShellStateComponent.Type<?>> REGISTRY = new SimpleRegistry<>(REGISTRY_KEY, Lifecycle.stable());
+        public static final Codec<ShellStateComponent> CODEC = REGISTRY.getCodec().dispatch("type", ShellStateComponent::getType, ShellStateComponent.Type::codec);
+        public static <T extends ShellStateComponent> ShellStateComponent.Type<T> register(Identifier id, ShellStateComponent.Type<T> componentType) {
+            return Registry.register(REGISTRY, id, componentType);
+        }
+    }
+
+    public abstract Type<?> getType();
+
     /**
      * @return Identifier of the component.
      */
@@ -155,11 +179,19 @@ public abstract class ShellStateComponent {
 
 
     private static class EmptyShellStateComponent extends ShellStateComponent {
-        public static final ShellStateComponent INSTANCE = new EmptyShellStateComponent();
+        public static final Identifier ID = Sync.locate("empty");
+        public static final ShellStateComponent.Type<EmptyShellStateComponent> TYPE = ShellStateComponent.Type.register(
+                ID, new Type<>(MapCodec.unit(EmptyShellStateComponent::new)));
+        public static final EmptyShellStateComponent INSTANCE = new EmptyShellStateComponent();
+
+        @Override
+        public Type<?> getType() {
+            return TYPE;
+        }
 
         @Override
         public String getId() {
-            return "sync:empty";
+            return ID.toString();
         }
 
         @Override
