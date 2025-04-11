@@ -7,8 +7,6 @@
   "mixins": [
   ],
   "client": [
-    "iris.CustomRenderLayerMixin",
-    "iris.ShellEntityRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

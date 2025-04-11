@@ -2,7 +2,9 @@ package dev.kir.sync.client.render.entity;
 
 import dev.kir.sync.api.shell.ShellState;
 import dev.kir.sync.client.model.ShellModel;
+import dev.kir.sync.compat.iris.IrisShellEntityRenderer;
 import dev.kir.sync.entity.ShellEntity;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumer;
@@ -65,8 +67,12 @@ public class ShellEntityRenderer extends PlayerEntityRenderer {
     }
 
     @SuppressWarnings("unused")
-    private VertexConsumer getVertexConsumerForPartiallyTexturedEntity(ShellEntity shell, float progress, RenderLayer baseLayer, VertexConsumerProvider vertexConsumers) {
-        return vertexConsumers.getBuffer(baseLayer);
+    public VertexConsumer getVertexConsumerForPartiallyTexturedEntity(ShellEntity shell, float progress, RenderLayer baseLayer, VertexConsumerProvider vertexConsumers) {
+        var baseConsumer = vertexConsumers.getBuffer(baseLayer);
+        if (FabricLoader.getInstance().isModLoaded("iris")) {
+            return IrisShellEntityRenderer.getVertexConsumerForPartiallyTexturedEntity(shell, progress, baseLayer, vertexConsumers, baseConsumer);
+        }
+        return baseConsumer;
     }
 
     @Override
