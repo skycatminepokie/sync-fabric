@@ -49,13 +49,11 @@
   "depends": {
     "fabric-api": "*",
     "fabricloader": "${fabric}",
-    "satin": "*",
-
     "minecraft": "${minecraft}",
+    "velvet": "*",
     "java": ">=21"
   },
   "includes": {
-    "crowdin-translate": "${crowdin_translate}",
     "team_reborn_energy": "${team_reborn_energy}"
   },
   "suggests": {
